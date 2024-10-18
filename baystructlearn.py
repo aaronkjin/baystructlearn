@@ -6,9 +6,9 @@
 import sys
 import pandas as pd
 import networkx as nx
-from itertools import permutations
+import numpy as np
 from math import lgamma
-import random
+from itertools import combinations
 
 
 # Step 1: Data preprocessing
@@ -23,41 +23,49 @@ def write_gph(dag, idx2names, filename):
             f.write("{}, {}\n".format(idx2names[edge[0]], idx2names[edge[1]]))
 
 
-# Step 2: Scoring function
-def compute_bayesian_score(data, dag, alpha):
-    score = 0.0
-    vars = data.columns
+def initialize_alpha(data):
+    alpha = {}
 
-    for var in vars:
-        parents = list(dag.predecessors(var))
-        var_data = data[var]
-
-        if parents:
-            parent_data = data[parents]
-            counts = parent_data.groupby(parents).size()
-            unique_configs = counts.index
-
-            for config in unique_configs:
-                if not isinstance(config, tuple):
-                    config = (config,)
-                
-                subset = var_data[parent_data.apply(lambda row: tuple(row) == config, axis = 1)]
-                m_ij0 = len(subset)
-                score += lgamma(alpha[var][0]) - lgamma(alpha[var][0] + m_ij0)
-                value_counts = subset.value_counts()
-
-                for state, count in value_counts.items():
-                    score += lgamma(alpha[var][state] + count) - lgamma(alpha[var][state])
-
-        else:
-            m_ij0 = len(var_data)
-            score += lgamma(alpha[var][0]) - lgamma(alpha[var][0] + m_ij0)
-            value_counts = var_data.value_counts()
-
-            for state, count in value_counts.items():
-                score += lgamma(alpha[var][state] + count) - lgamma(alpha[var][state])
+    # Using uniform priors: alpha = 1 for each state
+    for var in data.columns:
+        num_states = data[var].nunique()
+        alpha[var] = np.ones(num_states)
     
-    return score
+    return alpha
+
+
+# Step 2: Scoring function
+def compute_variable_score(data, var, parents, alpha):
+    # Edge case: No parents (score only depends on var itself)
+    if not parents:
+        counts = data[var].value_counts().values
+        score = lgamma(alpha[var].sum()) - lgamma(alpha[var].sum() + len(data))
+        score += np.sum(lgamma(alpha[var] + counts) - lgamma(alpha[var]))
+        
+        return score
+    
+    # General case: With parents (compute scores for each parent config)
+    else:
+        grouped = data.groupby(parents)[var].value_counts().unstack(fill_value = 0)
+        counts_parent = grouped.sum(axis = 1).values
+        counts_child = grouped.values
+        alpha_parent = alpha[var][grouped.columns]
+
+        score = lgamma(alpha[var][0]) - lgamma(alpha[var][0] + counts_parent)
+        score += np.sum(lgamma(counts_child + alpha[var]) - lgamma(alpha[var]))
+
+        return np.sum(score)
+
+
+def compute_bayesian_score(data, dag, alpha, variable_order):
+    total_score = 0.0
+
+    for var in variable_order:
+        parents = list(dag.predecessors(var))
+        score = compute_variable_score(data, var, parents, alpha)
+        total_score += score
+
+    return total_score
 
 
 def compute(infile, outfile):
