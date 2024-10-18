@@ -1,6 +1,6 @@
 # BayStructLearn
 
-A structure learning approach to find best-fit Bayesian networks. Using K2 search algorithm. A CS 238 project.
+A structure learning approach to find best-fit Bayesian networks using K2 search algorithm. A CS 238 project.
 
 ## Getting Started
 
