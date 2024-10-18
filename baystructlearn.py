@@ -9,6 +9,7 @@ import networkx as nx
 import numpy as np
 from scipy.special import gammaln
 from itertools import combinations
+import time
 
 
 # Step 1: Data preprocessing
@@ -123,12 +124,23 @@ def k2_search(data, alpha, max_parents=5):
 
 
 def compute(infile, outfile):
+    start_time = time.time()
+
     data = read_data(infile)
     alpha = initialize_alpha(data)
     dag, total_score = k2_search(data, alpha, max_parents=5)
     print(f"Total Bayesian score for {infile}: {total_score}")
 
     write_gph(dag, outfile)
+
+    end_time = time.time()
+    duration = end_time - start_time
+    minutes, seconds = divmod(duration, 60)
+
+    if minutes >= 1:
+        print(f"Time taken: {int(minutes)} minutes and {seconds:.2f} seconds")
+    else:
+        print(f"Time taken: {seconds:.2f} seconds")
 
 
 def main():
