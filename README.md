@@ -20,7 +20,7 @@ pip install -r requirements.txt
 To run the script:
 
 ```bash
-python3 baystructlearn.py <input_file>.csv <output_file>.gph
+python3 baystructlearn.py data/<input_file>.csv output/<output_file>.gph
 ```
 
 ## Technologies Used
