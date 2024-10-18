@@ -15,6 +15,21 @@ import time
 # Step 1: Data preprocessing
 def read_data(filename):
     data = pd.read_csv(filename)
+    for col in data.columns:
+        if data[col].dtype == 'object':
+            # Categorical var
+            data[col] = data[col].astype('category').cat.codes
+        elif data[col].nunique() > 10:
+            # Continuous var (assumption)
+            data[col] = pd.cut(data[col], bins=10, labels=False).astype(int)
+        else:
+            # Discrete var
+            data[col] = data[col].astype('category').cat.codes
+    
+    # Debug: Print number of states per var
+    print("Number of states per variable after encoding and discretization:")
+    for col in data.columns:
+        print(f"{col}: {data[col].nunique()} states")
     return data
 
 
@@ -55,10 +70,12 @@ def compute_variable_score(data, var, parents, alpha):
         counts_child = grouped.values
         alpha_sum = np.sum(alpha[var])
 
-        score = gammaln(alpha_sum) - gammaln(alpha_sum + counts_parent)
-        score += np.sum(gammaln(counts_child + alpha[var]) - gammaln(alpha[var]))
+        score_part1 = len(counts_parent) * gammaln(alpha_sum) - np.sum(gammaln(alpha_sum + counts_parent))
+        score_part2 = np.sum(gammaln(counts_child + alpha[var]) - gammaln(alpha[var]))
+        
+        total_score = score_part1 + score_part2
 
-        return np.sum(score)
+        return total_score
 
 
 def compute_bayesian_score(data, dag, alpha, variable_order):
