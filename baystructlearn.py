@@ -7,7 +7,7 @@ import sys
 import pandas as pd
 import networkx as nx
 import numpy as np
-from math import lgamma
+from scipy.special import gammaln
 from itertools import combinations
 
 
@@ -17,10 +17,10 @@ def read_data(filename):
     return data
 
 
-def write_gph(dag, idx2names, filename):
+def write_gph(dag, filename):
     with open(filename, 'w') as f:
-        for edge in dag.edges():
-            f.write("{}, {}\n".format(idx2names[edge[0]], idx2names[edge[1]]))
+        for parent, child in dag.edges():
+            f.write(f"{parent},{child}\n")
 
 
 def initialize_alpha(data):
@@ -39,8 +39,11 @@ def compute_variable_score(data, var, parents, alpha):
     # Edge case: No parents (score only depends on var itself)
     if not parents:
         counts = data[var].value_counts().values
-        score = lgamma(alpha[var].sum()) - lgamma(alpha[var].sum() + len(data))
-        score += np.sum(lgamma(alpha[var] + counts) - lgamma(alpha[var]))
+        total_count = len(data)
+        alpha_sum = np.sum(alpha[var])
+
+        score = gammaln(alpha_sum) - gammaln(alpha_sum + total_count)
+        score += np.sum(gammaln(alpha[var] + counts) - gammaln(alpha[var]))
         
         return score
     
@@ -49,10 +52,10 @@ def compute_variable_score(data, var, parents, alpha):
         grouped = data.groupby(parents)[var].value_counts().unstack(fill_value=0)
         counts_parent = grouped.sum(axis=1).values
         counts_child = grouped.values
-        alpha_parent = alpha[var][grouped.columns]
+        alpha_sum = np.sum(alpha[var])
 
-        score = lgamma(alpha[var][0]) - lgamma(alpha[var][0] + counts_parent)
-        score += np.sum(lgamma(counts_child + alpha[var]) - lgamma(alpha[var]))
+        score = gammaln(alpha_sum) - gammaln(alpha_sum + counts_parent)
+        score += np.sum(gammaln(counts_child + alpha[var]) - gammaln(alpha[var]))
 
         return np.sum(score)
 
@@ -120,10 +123,12 @@ def k2_search(data, alpha, max_parents=5):
 
 
 def compute(infile, outfile):
-    # WRITE YOUR CODE HERE
-    # FEEL FREE TO CHANGE ANYTHING ANYWHERE IN THE CODE
-    # THIS INCLUDES CHANGING THE FUNCTION NAMES, MAKING THE CODE MODULAR, BASICALLY ANYTHING
-    pass
+    data = read_data(infile)
+    alpha = initialize_alpha(data)
+    dag, total_score = k2_search(data, alpha, max_parents=5)
+    print(f"Total Bayesian score for {infile}: {total_score}")
+
+    write_gph(dag, outfile)
 
 
 def main():
