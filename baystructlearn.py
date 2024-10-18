@@ -2,9 +2,19 @@
 #               Bayesian Structure Learning                #
 #                     By: Aaron Jin                        #
 ############################################################
-import sys
 
-import networkx
+import sys
+import pandas as pd
+import networkx as nx
+from itertools import permutations
+from math import lgamma
+import random
+
+
+# Step 1: Data preprocessing
+def read_data(filename):
+    data = pd.read_csv(filename)
+    return data
 
 
 def write_gph(dag, idx2names, filename):
