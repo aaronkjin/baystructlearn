@@ -33,7 +33,7 @@ python3 baystructlearn.py data/<input_file>.csv output/<output_file>.gph
 
 ## Background
 
-In this project, I focus on Bayesian network structure learning, which involves discovering the optimal network structure that best represents the dependencies in a given dataset. Here, I use the K2 algorithm, a greedy, heuristic search approach, where this implementation efficient constructs a DAG by iteratively adding parent nodes to each variable to maximize the Bayesian score. I also implement optimizations using vectorized operations with Pandas and NumPy to reduce execution time and ensure performance, since our datasets have varying sizes.
+In this project, I focus on Bayesian network structure learning, which involves discovering the optimal network structure that best represents the dependencies in a given dataset. Here, I use the K2 algorithm, a greedy, heuristic search approach, where this implementation efficiently constructs a DAG by iteratively adding parent nodes to each variable to maximize the Bayesian score. I also implement optimizations using vectorized operations with Pandas and NumPy to reduce execution time and ensure performance, since our datasets have varying sizes.
 
 ## Developer
 
