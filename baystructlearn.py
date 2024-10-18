@@ -46,8 +46,8 @@ def compute_variable_score(data, var, parents, alpha):
     
     # General case: With parents (compute scores for each parent config)
     else:
-        grouped = data.groupby(parents)[var].value_counts().unstack(fill_value = 0)
-        counts_parent = grouped.sum(axis = 1).values
+        grouped = data.groupby(parents)[var].value_counts().unstack(fill_value=0)
+        counts_parent = grouped.sum(axis=1).values
         counts_child = grouped.values
         alpha_parent = alpha[var][grouped.columns]
 
@@ -66,6 +66,57 @@ def compute_bayesian_score(data, dag, alpha, variable_order):
         total_score += score
 
     return total_score
+
+
+# Step 3: Search algorithm
+def k2_search(data, alpha, max_parents=5):
+    variables = list(data.columns)
+    variable_order = variables.copy()
+    dag = nx.DiGraph()
+    dag.add_nodes_from(variables)
+    total_score = 0.0
+
+    unique_states = {var: data[var].unique() for var in variables}
+
+    for i, var in enumerate(variable_order):
+        cur_parents = []
+        best_score = compute_variable_score(data, var, cur_parents, alpha)
+        improved = True
+
+        while improved and len(cur_parents) < max_parents:
+            improved = False
+            candidate_parents = [v for v in variable_order[:i] if v not in cur_parents]
+            scores = []
+
+            if not candidate_parents:
+                break
+
+            # Calculate vectorized computation of scores for all candidate parents
+            candidate_scores = []
+            for candidate in candidate_parents:
+                temp_parents = cur_parents + [candidate]
+                score = compute_variable_score(data, var, temp_parents, alpha)
+                candidate_scores.append((candidate, score))
+
+            # Find candidate with highest score
+            if candidate_scores:
+                best_candidate, best_candidate_score = max(candidate_scores, key=lambda x: x[1])
+
+                if best_candidate_score > best_score:
+                    cur_parents.append(best_candidate)
+                    best_score = best_candidate_score
+                    improved = True
+                else:
+                    improved = False
+
+        # Add selected parents to DAG
+        for parent in cur_parents:
+            dag.add_edge(parent, var)
+        
+        total_score += best_score
+        print(f"Variable '{var}': Parents added: {cur_parents}, Score: {best_score}")
+    
+    return dag, total_score
 
 
 def compute(infile, outfile):
