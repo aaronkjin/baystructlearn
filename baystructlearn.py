@@ -8,7 +8,7 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 from scipy.special import gammaln
-from itertools import combinations
+import matplotlib.pyplot as plt
 import time
 
 
@@ -140,6 +140,18 @@ def k2_search(data, alpha, max_parents=5):
     return dag, total_score
 
 
+# Step 4: Graph visualization
+def plot_graph(dag, infile, outfile):
+    plt.figure(figsize=(12, 8))
+    pos = nx.spring_layout(dag, seed=42)
+    nx.draw_networkx(dag, pos, with_labels=True, node_size=1500, node_color='lightblue', arrowsize=20, font_size=10)
+    plt.title(f"Bayesian Network Structure for {infile}")
+    image_filename = outfile.replace('.gph', '.png')
+    plt.tight_layout()
+    plt.savefig(image_filename)
+    plt.close()
+
+
 def compute(infile, outfile):
     start_time = time.time()
 
@@ -147,6 +159,8 @@ def compute(infile, outfile):
     alpha = initialize_alpha(data)
     dag, total_score = k2_search(data, alpha, max_parents=5)
     print(f"Total Bayesian score for {infile}: {total_score}")
+
+    plot_graph(dag, infile, outfile)
 
     write_gph(dag, outfile)
 
