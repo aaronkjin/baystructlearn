@@ -29,6 +29,7 @@ python3 baystructlearn.py data/<input_file>.csv output/<output_file>.gph
 - Pandas
 - NumPy
 - SciPy
+- Matplotlib
 - NetworkX
 
 ## Background
