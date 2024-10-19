@@ -19,9 +19,6 @@ def read_data(filename):
         if data[col].dtype == 'object':
             # Categorical var
             data[col] = data[col].astype('category').cat.codes
-        elif data[col].nunique() > 10:
-            # Continuous var (assumption)
-            data[col] = pd.cut(data[col], bins=10, labels=False).astype(int)
         else:
             # Discrete var
             data[col] = data[col].astype('category').cat.codes
