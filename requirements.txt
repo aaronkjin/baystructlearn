@@ -2,4 +2,4 @@ pandas
 networkx
 numpy
 scipy
-python-matplotlib
+matplotlib
